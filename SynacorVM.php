@@ -16,6 +16,48 @@ class SynacorVM
         $this->memory = str_pad($bin, self::MAX_INT * 2, "\x00\x00");
     }
 
+    function debugCommand()
+    {
+        
+        $cmdline = trim(readline('DEVHAX: '));
+        $cmdline = explode(' ', $cmdline);
+        $cmd = array_shift($cmdline);
+        switch ($cmd) {
+            case 'dumpreg':
+                echo json_encode($this->registers);
+                break;
+
+            case 'setreg':
+                list ($reg, $value) = $cmdline;
+                $this->setRegister($reg, $value);
+                break;
+
+            case 'memread':
+                echo $this->readMemory($cmdline[0]);
+                break;
+
+            case 'memwrite':
+                echo $this->writeMemory($cmdline[0], $cmdline[1]);
+                break;
+
+            case 'cursor':
+                echo '' . $this->cursor;
+                break;
+
+            case 'dumpstack':
+                echo json_encode($this->stack);
+                break;
+
+            case 'pushstack':
+                echo '' . array_push($this->stack, intval($cmdline[0]));
+                break;
+
+            case 'popstack':
+                echo '' . array_pop($this->stack);
+                break;
+        }
+    }
+
     function readRegister(int $register)
     {
         return $this->registers[$register] ?? 0;
@@ -215,6 +257,14 @@ class SynacorVM
     function op_in() {
         $a = $this->nextRegister();
         $input = ord(fgetc(STDIN));
+        // hack debug mode
+        if ($input === 27) {
+            // do debug
+            $this->debugCommand();
+
+            // give a newline
+            $input = 10;
+        }
         $this->setRegister($a, $input);
     }
 
